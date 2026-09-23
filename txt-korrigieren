@@ -628,16 +628,23 @@ def process_file(file_path: str, apply_fix: bool = False, style_mode: bool = Fal
         res.status = "unsupported"
         return res
 
+class SingleLineHelpFormatter(argparse.HelpFormatter):
+    def _split_lines(self, text, width):
+        return [text]
+
 def main():
     parser = argparse.ArgumentParser(
         prog="txt-korrigieren",
-        description="Deterministische Text-, Orthografie- und Stilkorrektur-Engine (txt-korrigieren)"
+        formatter_class=lambda prog: SingleLineHelpFormatter(prog, max_help_position=16, width=220),
+        description="Deterministische Text-, Orthografie- und Stilkorrektur nach Duden und amtlichem Regelwerk.",
+        add_help=False
     )
-    parser.add_argument("file", type=str, help="Pfad zur Zieldatei (.docx, .txt, .md, .typ, .rtf, .rtfd)")
-    parser.add_argument("-s", "--stil", "--idiomatik", action="store_true", help="STIL & IDIOMATIK KORRIGIEREN (optimiert unidiomatische Wendungen, bürokratische Floskeln, Pleonasmen)")
-    parser.add_argument("-f", "--fix", action="store_true", help="Wendet Korrekturen unmittelbar mit Pre-Edit-Backup an (Standard bei direkter Ausführung)")
-    parser.add_argument("-a", "--audit", action="store_true", help="Führt eine reine Fehlerprüfung ohne Schreibzugriff durch")
-    parser.add_argument("--json", action="store_true", help="Gibt die Ergebnisse im JSON-Format aus")
+    parser.add_argument("-h", action="help", help="Hilfe anzeigen")
+    parser.add_argument("-s", dest="style_mode", action="store_true", help="Stil- und Idiomatikkorrektur (optimiert Floskeln, Pleonasmen und Anglizismen)")
+    parser.add_argument("-a", dest="audit_only", action="store_true", help="Prüflauf (reine Fehleranalyse ohne Schreibzugriff)")
+    parser.add_argument("-o", dest="output", metavar="AUSGABE", default=None, help="Optionaler Ausgabepfad (.txt)")
+    parser.add_argument("-j", dest="json_output", action="store_true", help="Ausgabe im JSON-Format")
+    parser.add_argument("file", metavar="DATEI", help="Text-, Word- oder RTF/RTFD-Datei (.txt/.md/.docx/.typ/.rtf/.rtfd)")
 
     args = parser.parse_args()
     file_path = os.path.abspath(os.path.expanduser(args.file))
@@ -646,14 +653,21 @@ def main():
         sys.stderr.write(f"Fehler: Datei existiert nicht: {file_path}\n")
         sys.exit(1)
 
-    apply_fix = not args.audit
-    style_mode = args.stil
+    apply_fix = not args.audit_only
+    style_mode = args.style_mode
     result = process_file(file_path, apply_fix=apply_fix, style_mode=style_mode)
 
-    if args.json:
+    if args.output and result.exported_txt_path and os.path.exists(result.exported_txt_path):
+        try:
+            shutil.copy2(result.exported_txt_path, args.output)
+            result.exported_txt_path = args.output
+        except Exception:
+            pass
+
+    if args.json_output:
         print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
     else:
-        print("=== Textkorrektur-Engine (/text-korrigieren) ===")
+        print("=== Textkorrektur-Engine (txt-korrigieren) ===")
         print(f"Datei: {result.file_path}")
         print(f"Status: {result.status.upper()}")
         print(f"Befunde: {len(result.findings)}")

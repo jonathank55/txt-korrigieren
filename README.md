@@ -47,13 +47,13 @@ txt-korrigieren DATEI [OPTIONEN]
 
 ### Optionen
 
-| Option | Langform | Funktion |
+| Option | Parameter | Funktion |
 | :--- | :--- | :--- |
-| `-s` | `--stil`, `--idiomatik` | **STIL & IDIOMATIK KORRIGIEREN:** Bereinigt zusätzlich Floskeln, Pleonasmen und Anglizismen. |
-| `-f` | `--fix` | Wendet Korrekturen unmittelbar in situ im Dokument an (Standard bei direkter Ausführung). |
-| `-a` | `--audit` | Reiner Prüflauf / Trockenlauf ohne Schreibzugriff auf die Datei. |
-| `--json` | | Gibt die Diagnose- und Korrekturergebnisse als maschinenlesbares JSON aus. |
-| `-h` | `--help` | Zeigt die Befehlshilfe an. |
+| `-s` | | **Stil- & Idiomatikkorrektur:** Optimiert Floskeln, Pleonasmen, Nominalstil und Anglizismen. |
+| `-a` | | **Prüflauf (Audit):** Reine Fehleranalyse ohne Schreibzugriff auf die Zieldatei. |
+| `-o` | `AUSGABE` | **Ausgabepfad:** Schreibt den bereinigten Text zusätzlich in den angegebenen Zieldateipfad (.txt). |
+| `-j` | | **JSON-Ausgabe:** Gibt die Diagnose- und Korrekturergebnisse als maschinenlesbares JSON aus. |
+| `-h` | | **Hilfe:** Zeigt die einzeilige Befehlshilfe an. |
 
 ---
 
