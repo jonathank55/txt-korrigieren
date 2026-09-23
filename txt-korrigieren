@@ -57,7 +57,7 @@ DETERMINISTIC_RULES = [
     },
     {
         "id": "indefinitpronomen_genus_beispiel",
-        "pattern": r'\beinen\s+(von\s+vielen\s+Beispielen)\b',
+        "pattern": r'\beinen[ \t]+(von[ \t]+vielen[ \t]+Beispielen)\b',
         "replacement_str": r'eines \1',
         "rule": "Duden-Grammatik § 491",
         "reference": "Duden-Grammatik § 491: Im Akkusativ Neutrum Singular lautet das Indefinitpronomen stellvertretend 'eines' (nicht maskulin 'einen')."
@@ -71,34 +71,27 @@ DETERMINISTIC_RULES = [
     },
     {
         "id": "deren_ausbeutung_reflexiv",
-        "pattern": r'\bderen\s+Ausbeutung\b',
+        "pattern": r'\bderen[ \t]+Ausbeutung\b',
         "replacement_str": "ihre Ausbeutung",
         "rule": "Grammatik § 484 ff.",
         "reference": "Duden-Grammatik § 484 ff.: Bei Rückbezug auf das Subjekt ist das Possessivpronomen 'ihre' obligatorisch."
     },
     {
         "id": "saemtliche_adjektiv_en",
-        "pattern": r'\b(sämtliche|alle|beide)\s+([a-zäöüß]+e)\s+([A-ZÄÖÜ][a-zäöüß]+[en|e])\b',
+        "pattern": r'\b(sämtliche|alle|beide)[ \t]+([a-zäöüß]+e)[ \t]+([A-ZÄÖÜ][a-zäöüß]+[en|e])\b',
         "rule": "Grammatik § 1515",
         "reference": "Duden-Grammatik § 1515: Nach 'sämtliche', 'alle' und 'beide' folgt das Adjektiv im Plural schwach auf '-en'."
     },
     {
-        "id": "doppelleerzeichen",
-        "pattern": r'(\.\s{2,})([A-ZÄÖÜ])',
-        "replacement_str": r'. \2',
-        "rule": "Typografie & DIN 5008",
-        "reference": "DIN 5008 / Duden: Nach Satzzeichen steht genau ein einfaches Leerzeichen."
-    },
-    {
         "id": "zeitgenoessisch_kontrast",
-        "pattern": r'\b(historisch\s+sowie\s+)zeitgenössisch\b',
+        "pattern": r'\b(historisch[ \t]+sowie[ \t]+)zeitgenössisch\b',
         "replacement_str": r'\1gegenwärtig',
         "rule": "Semantik & Lexik",
         "reference": "Duden: 'zeitgenössisch' bezeichnet dieselbe Epoche; Gegenbegriff zu 'historisch' ist 'gegenwärtig'."
     },
     {
         "id": "aufrechterhaltung_handhaben",
-        "pattern": r'\bUm\s+die\s+Aufrechterhaltung\s+dessen\s+handzuhaben\b',
+        "pattern": r'\bUm[ \t]+die[ \t]+Aufrechterhaltung[ \t]+dessen[ \t]+handzuhaben\b',
         "replacement_str": "Um dieses aufrechtzuerhalten",
         "rule": "Kollokation & Idiomatik",
         "reference": "Duden: 'Aufrechterhaltung handhaben' ist unidiomatisch. Normgerecht: 'aufrechterhalten'."
@@ -147,14 +140,14 @@ DETERMINISTIC_RULES = [
     },
     {
         "id": "such_are_as_typo",
-        "pattern": r'\bsuch\s+are\b',
+        "pattern": r'\bsuch[ \t]+are\b',
         "replacement_str": "such as",
         "rule": "Grammar & Collocation",
         "reference": "Standard English: The comparative exemplar phrase is 'such as' (not 'such are')."
     },
     {
         "id": "non_manipulative_hyphen",
-        "pattern": r'\bnon\s+manipulative\b',
+        "pattern": r'\bnon[ \t]+manipulative\b',
         "replacement_str": "non-manipulative",
         "rule": "Compound Hyphenation",
         "reference": "Standard English: Prefixes with 'non-' modifying an adjective require a hyphen ('non-manipulative')."
@@ -165,14 +158,14 @@ DETERMINISTIC_RULES = [
 STYLE_RULES = [
     {
         "id": "in_keinster_weise",
-        "pattern": r'\bin\s+keinster\s+Weise\b',
+        "pattern": r'\bin[ \t]+keinster[ \t]+Weise\b',
         "replacement_str": "keineswegs",
         "rule": "Stil & Grammatik (Superlativ von kein)",
         "reference": "Duden: 'in keinster Weise' ist standardsprachlich unzulässig (kein ist nicht steigerbar). Normgerecht: 'keineswegs' oder 'in keiner Weise'."
     },
     {
         "id": "sinn_machen",
-        "pattern": r'\b(macht|machte|machen|gemacht)\s+Sinn\b',
+        "pattern": r'\b(macht|machte|machen|gemacht)[ \t]+Sinn\b',
         "replacement_map": {
             "macht sinn": "ist sinnvoll",
             "machte sinn": "war sinnvoll",
@@ -198,7 +191,7 @@ STYLE_RULES = [
     },
     {
         "id": "am_ende_des_tages",
-        "pattern": r'\b(A|a)m\s+Ende\s+des\s+Tages\b',
+        "pattern": r'\b(A|a)m[ \t]+Ende[ \t]+des[ \t]+Tages\b',
         "replacement_map": {
             "am ende des tages": "letztlich",
             "Am Ende des Tages": "Letztlich"
@@ -208,21 +201,21 @@ STYLE_RULES = [
     },
     {
         "id": "bereits_schon",
-        "pattern": r'\bbereits\s+schon\b',
+        "pattern": r'\bbereits[ \t]+schon\b',
         "replacement_str": "bereits",
         "rule": "Pleonasmus-Bereinigung",
         "reference": "Duden: 'bereits schon' ist ein Pleonasmus. Normgerecht: 'bereits' oder 'schon'."
     },
     {
         "id": "voll_und_ganz",
-        "pattern": r'\bvoll\s+und\s+ganz\b',
+        "pattern": r'\bvoll[ \t]+und[ \t]+ganz\b',
         "replacement_str": "vollständig",
         "rule": "Floskel- & Tautologievermeidung",
         "reference": "Stilistik: 'voll und ganz' ist eine formelhafte Zwillingsformel. Normgerecht: 'vollständig' oder 'völlig'."
     },
     {
         "id": "im_endeffekt",
-        "pattern": r'\b(I|i)m\s+Endeffekt\b',
+        "pattern": r'\b(I|i)m[ \t]+Endeffekt\b',
         "replacement_map": {
             "im endeffekt": "letztlich",
             "Im Endeffekt": "Letztlich"
@@ -232,7 +225,7 @@ STYLE_RULES = [
     },
     {
         "id": "im_hinblick_auf_die_tatsache",
-        "pattern": r'\b(I|i)m\s+Hinblick\s+auf\s+die\s+Tatsache,\s+dass\b',
+        "pattern": r'\b(I|i)m[ \t]+Hinblick[ \t]+auf[ \t]+die[ \t]+Tatsache,[ \t]+dass\b',
         "replacement_map": {
             "im hinblick auf die tatsache, dass": "da",
             "Im Hinblick auf die Tatsache, dass": "Da"
@@ -242,28 +235,28 @@ STYLE_RULES = [
     },
     {
         "id": "eine_entscheidung_treffen",
-        "pattern": r'\beine\s+Entscheidung\s+treffen\b',
+        "pattern": r'\beine[ \t]+Entscheidung[ \t]+treffen\b',
         "replacement_str": "entscheiden",
         "rule": "Funktionsverbgefüge / Prägnanz",
         "reference": "Stilistik: Streckform des Verbs. Prägnanter: 'entscheiden'."
     },
     {
         "id": "zur_anwendung_bringen",
-        "pattern": r'\bzur\s+Anwendung\s+bringen\b',
+        "pattern": r'\bzur[ \t]+Anwendung[ \t]+bringen\b',
         "replacement_str": "anwenden",
         "rule": "Funktionsverbgefüge / Prägnanz",
         "reference": "Stilistik: Streckform des Verbs. Prägnanter: 'anwenden'."
     },
     {
         "id": "in_erwaegung_ziehen",
-        "pattern": r'\bin\s+Erwägung\s+ziehen\b',
+        "pattern": r'\bin[ \t]+Erwägung[ \t]+ziehen\b',
         "replacement_str": "erwägen",
         "rule": "Funktionsverbgefüge / Prägnanz",
         "reference": "Stilistik: Streckform des Verbs. Prägnanter: 'erwägen'."
     },
     {
         "id": "persoenliche_meinung",
-        "pattern": r'\bmeine\s+persönliche\s+Meinung\b',
+        "pattern": r'\bmeine[ \t]+persönliche[ \t]+Meinung\b',
         "replacement_str": "meine Meinung",
         "rule": "Pleonasmus-Bereinigung",
         "reference": "Stilistik: Eine Meinung ist immer persönlich. Präzise: 'meine Meinung'."
