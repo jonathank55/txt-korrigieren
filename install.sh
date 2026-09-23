@@ -25,7 +25,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # 2. Abhängigkeiten installieren
 echo "Prüfe Python-Abhängigkeiten..."
 if command -v pip3 >/dev/null 2>&1; then
-    pip3 install duden pymupdf --break-system-packages >/dev/null 2>&1 || pip3 install duden pymupdf >/dev/null 2>&1 || true
+    pip3 install duden --break-system-packages >/dev/null 2>&1 || pip3 install duden >/dev/null 2>&1 || true
 fi
 
 # 3. Binaries und Module installieren
