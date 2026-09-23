@@ -49,11 +49,11 @@ txt-korrigieren DATEI [OPTIONEN]
 
 | Option | Parameter | Funktion |
 | :--- | :--- | :--- |
-| `-s` | | **Stil- & Idiomatikkorrektur:** Optimiert Floskeln, Pleonasmen, Nominalstil und Anglizismen. |
-| `-a` | | **Prüflauf (Audit):** Reine Fehleranalyse ohne Schreibzugriff auf die Zieldatei. |
+| `-s` | `STIL` | **Stil- & Idiomatikkorrektur:** Optimiert Floskeln, Pleonasmen und Nominalstil (`all`, `floskeln`, `pleonasmen`, `nominalstil`; Standard bei `-s`: `all`). |
+| `-a` | `MODUS` | **Prüflauf (Audit):** Reine Fehleranalyse ohne Schreibzugriff (`detail` für Vollbericht, `summary` für Kurzüberblick; Standard bei `-a`: `detail`). |
 | `-o` | `AUSGABE` | **Ausgabepfad:** Schreibt den bereinigten Text zusätzlich in den angegebenen Zieldateipfad (.txt). |
-| `-j` | | **JSON-Ausgabe:** Gibt die Diagnose- und Korrekturergebnisse als maschinenlesbares JSON aus. |
-| `-h` | | **Hilfe:** Zeigt die einzeilige Befehlshilfe an. |
+| `-j` | `FORMAT` | **JSON-Ausgabe:** Maschinelles JSON für Pipelines (`pretty` formatiert, `compact` einzeilig; Standard bei `-j`: `pretty`). |
+| `-h` | – | **Hilfe:** Zeigt die einzeilige Befehlshilfe an. |
 
 ---
 

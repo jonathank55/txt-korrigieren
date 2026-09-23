@@ -236,6 +236,20 @@ STYLE_RULES = [
     }
 ]
 
+def get_active_rules(style_mode: Any = None) -> List[Dict[str, Any]]:
+    if not style_mode:
+        return list(DETERMINISTIC_RULES)
+    mode = str(style_mode).lower().strip()
+    if mode in ["all", "ja", "true", "1"]:
+        return DETERMINISTIC_RULES + STYLE_RULES
+    elif mode == "floskeln":
+        return DETERMINISTIC_RULES + [r for r in STYLE_RULES if "Floskel" in r["rule"] or "Nominalstil" in r["rule"]]
+    elif mode == "pleonasmen":
+        return DETERMINISTIC_RULES + [r for r in STYLE_RULES if "Pleonasmus" in r["rule"] or "Tautologie" in r["rule"]]
+    elif mode == "nominalstil":
+        return DETERMINISTIC_RULES + [r for r in STYLE_RULES if "Nominalstil" in r["rule"] or "Funktionsverb" in r["rule"]]
+    return DETERMINISTIC_RULES + STYLE_RULES
+
 def create_backup(file_path: str) -> Optional[str]:
     """Erstellt eine atomare .bak-Sicherung und registriert sie im zentralen Archiv."""
     if not os.path.exists(file_path):
@@ -361,7 +375,7 @@ def apply_rule_to_runs(p, rule: Dict[str, Any], apply_fix: bool = False) -> List
     return findings
 
 def audit_and_fix_docx(file_path: str, apply_fix: bool = False, style_mode: bool = False) -> TextAuditResult:
-    active_rules = DETERMINISTIC_RULES + (STYLE_RULES if style_mode else [])
+    active_rules = get_active_rules(style_mode)
     """Verarbeitet .docx-Dokumente formatgetreu über Runs und Absätze."""
     result = TextAuditResult(file_path)
     try:
@@ -424,7 +438,7 @@ def audit_and_fix_docx(file_path: str, apply_fix: bool = False, style_mode: bool
 
 def audit_and_fix_plain(file_path: str, apply_fix: bool = False, style_mode: bool = False) -> TextAuditResult:
     """Verarbeitet Text-, Markdown- und Typst-Dateien."""
-    active_rules = DETERMINISTIC_RULES + (STYLE_RULES if style_mode else [])
+    active_rules = get_active_rules(style_mode)
     """Verarbeitet Text-, Markdown- und Typst-Dateien."""
     result = TextAuditResult(file_path)
     try:
@@ -520,7 +534,7 @@ def to_rtf_escapes(s: str) -> str:
 
 def audit_and_fix_rtf(file_path: str, apply_fix: bool = False, style_mode: bool = False) -> TextAuditResult:
     """Verarbeitet RTF-Dateien sowie RTFD-Bundles."""
-    active_rules = DETERMINISTIC_RULES + (STYLE_RULES if style_mode else [])
+    active_rules = get_active_rules(style_mode)
     """Verarbeitet RTF-Dateien sowie RTFD-Bundles."""
     result = TextAuditResult(file_path)
     
@@ -628,6 +642,28 @@ def process_file(file_path: str, apply_fix: bool = False, style_mode: bool = Fal
         res.status = "unsupported"
         return res
 
+def normalize_cli_args(raw_args):
+    """Normalisiert CLI-Argumente, sodass -s, -a, -j auch als Standalone-Flags ohne Wert übergeben werden können."""
+    style_keywords = {"all", "floskeln", "pleonasmen", "nominalstil"}
+    audit_keywords = {"detail", "summary"}
+    json_keywords = {"pretty", "compact"}
+    norm = []
+    i = 0
+    while i < len(raw_args):
+        a = raw_args[i]
+        norm.append(a)
+        if a == "-s":
+            if i + 1 >= len(raw_args) or raw_args[i + 1].startswith("-") or raw_args[i + 1].lower() not in style_keywords:
+                norm.append("all")
+        elif a == "-a":
+            if i + 1 >= len(raw_args) or raw_args[i + 1].startswith("-") or raw_args[i + 1].lower() not in audit_keywords:
+                norm.append("detail")
+        elif a == "-j":
+            if i + 1 >= len(raw_args) or raw_args[i + 1].startswith("-") or raw_args[i + 1].lower() not in json_keywords:
+                norm.append("pretty")
+        i += 1
+    return norm
+
 class SingleLineHelpFormatter(argparse.HelpFormatter):
     def _split_lines(self, text, width):
         return [text]
@@ -640,20 +676,21 @@ def main():
         add_help=False
     )
     parser.add_argument("-h", action="help", help="Hilfe anzeigen")
-    parser.add_argument("-s", dest="style_mode", action="store_true", help="Stil- und Idiomatikkorrektur (optimiert Floskeln, Pleonasmen und Anglizismen)")
-    parser.add_argument("-a", dest="audit_only", action="store_true", help="Prüflauf (reine Fehleranalyse ohne Schreibzugriff)")
+    parser.add_argument("-s", dest="style_mode", metavar="STIL", default=None, help="Stil- und Idiomatikkorrektur (all; floskeln, pleonasmen, nominalstil)")
+    parser.add_argument("-a", dest="audit_mode", metavar="MODUS", default=None, help="Prüflauf ohne Schreibzugriff (detail, summary)")
     parser.add_argument("-o", dest="output", metavar="AUSGABE", default=None, help="Optionaler Ausgabepfad (.txt)")
-    parser.add_argument("-j", dest="json_output", action="store_true", help="Ausgabe im JSON-Format")
+    parser.add_argument("-j", dest="json_format", metavar="FORMAT", default=None, help="Ausgabe im JSON-Format (pretty, compact)")
     parser.add_argument("file", metavar="DATEI", help="Text-, Word- oder RTF/RTFD-Datei (.txt/.md/.docx/.typ/.rtf/.rtfd)")
 
-    args = parser.parse_args()
+    normalized_args = normalize_cli_args(sys.argv[1:])
+    args = parser.parse_args(normalized_args)
     file_path = os.path.abspath(os.path.expanduser(args.file))
 
     if not os.path.exists(file_path):
         sys.stderr.write(f"Fehler: Datei existiert nicht: {file_path}\n")
         sys.exit(1)
 
-    apply_fix = not args.audit_only
+    apply_fix = args.audit_mode is None
     style_mode = args.style_mode
     result = process_file(file_path, apply_fix=apply_fix, style_mode=style_mode)
 
@@ -664,8 +701,10 @@ def main():
         except Exception:
             pass
 
-    if args.json_output:
-        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=2))
+    if args.json_format:
+        indent = 2 if args.json_format == "pretty" else None
+        separators = None if args.json_format == "pretty" else (",", ":")
+        print(json.dumps(result.to_dict(), ensure_ascii=False, indent=indent, separators=separators))
     else:
         print("=== Textkorrektur-Engine (txt-korrigieren) ===")
         print(f"Datei: {result.file_path}")
