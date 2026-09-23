@@ -26,7 +26,6 @@ from typing import Dict, Any, List, Tuple, Optional
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CONFIG_DIR = os.path.expanduser("~/.gemini/config")
 SCRIPTS_DIR = os.path.join(CONFIG_DIR, "scripts")
-DATA_DIR = os.path.join(CONFIG_DIR, "data")
 BACKUP_SCRIPT = os.path.join(SCRIPTS_DIR, "file_backup_engine.py")
 
 # Import der Duden-Engine (lokal oder zentral)
@@ -40,6 +39,15 @@ except ImportError:
     KNOWN_COMMON_ERRORS = {}
     def lookup(w: str) -> Dict[str, Any]:
         return {"status": "fallback", "word": w}
+
+# Import PyMuPDF für PDF-Korrektur
+try:
+    import pymupdf as fitz
+except ImportError:
+    try:
+        import fitz
+    except ImportError:
+        fitz = None
 
 # Spezifische deterministische Heuristiken & normative Korrekturregeln (Minimalinvasiv)
 DETERMINISTIC_RULES = [
@@ -124,6 +132,41 @@ DETERMINISTIC_RULES = [
         "replacement_str": "wiederum",
         "rule": "Laut-Buchstaben-Zuordnung",
         "reference": "Duden: Das Adverb heißt 'wiederum' (mit einfachem 'r')."
+    },
+    {
+        "id": "currentl_typo",
+        "pattern": r'\bcurrentl\b',
+        "replacement_str": "currently",
+        "rule": "Orthography / Typo",
+        "reference": "Standard English: 'currentl' is a typo for 'currently'."
+    },
+    {
+        "id": "whcih_typo",
+        "pattern": r'\bwhcih\b',
+        "replacement_str": "which",
+        "rule": "Orthography / Typo",
+        "reference": "Standard English: 'whcih' is a typo for 'which'."
+    },
+    {
+        "id": "diagramm_en_typo",
+        "pattern": r'\bdiagramm(s)?\b',
+        "replacement_str": r'diagram\1',
+        "rule": "Orthography / False Friend",
+        "reference": "Standard English: 'diagram' is spelled with a single 'm' (not German 'diagramm')."
+    },
+    {
+        "id": "such_are_as_typo",
+        "pattern": r'\bsuch\s+are\b',
+        "replacement_str": "such as",
+        "rule": "Grammar & Collocation",
+        "reference": "Standard English: The comparative exemplar phrase is 'such as' (not 'such are')."
+    },
+    {
+        "id": "non_manipulative_hyphen",
+        "pattern": r'\bnon\s+manipulative\b',
+        "replacement_str": "non-manipulative",
+        "rule": "Compound Hyphenation",
+        "reference": "Standard English: Prefixes with 'non-' modifying an adjective require a hyphen ('non-manipulative')."
     }
 ]
 
@@ -625,6 +668,149 @@ def audit_and_fix_rtf(file_path: str, apply_fix: bool = False, style_mode: bool 
 
     return result
 
+def resolve_font_for_span(span: Optional[Dict[str, Any]]) -> Tuple[Optional[str], Optional[str]]:
+    """Ermittelt den passenden Fontnamen oder Fontdatei-Pfad für PyMuPDF."""
+    font_name = span.get("font", "").lower() if span else ""
+    pt_serif_paths = [
+        os.path.expanduser("~/Library/Fonts/PTSerif-Regular.ttf"),
+        "/Library/Fonts/PTSerif-Regular.ttf",
+        "/System/Library/Fonts/Supplemental/PTSerif-Regular.ttf"
+    ]
+    if "ptserif" in font_name or "pt serif" in font_name:
+        for p in pt_serif_paths:
+            if os.path.exists(p):
+                return p, None
+
+    if any(s in font_name for s in ["serif", "times", "garamond", "roman"]):
+        for p in pt_serif_paths:
+            if os.path.exists(p):
+                return p, None
+        return None, "times-roman"
+
+    if any(s in font_name for s in ["sans", "helvetica", "arial"]):
+        return None, "helv"
+
+    if any(s in font_name for s in ["mono", "courier", "code"]):
+        return None, "courier"
+
+    for p in pt_serif_paths:
+        if os.path.exists(p):
+            return p, None
+    return None, "times-roman"
+
+def find_span_for_rect(page_dict: Optional[Dict[str, Any]], rect: Any) -> Optional[Dict[str, Any]]:
+    """Ermittelt den Text-Span, der mit dem übergebenen Rect überlappt."""
+    if not page_dict:
+        return None
+    for block in page_dict.get("blocks", []):
+        for line in block.get("lines", []):
+            for span in line.get("spans", []):
+                s_bbox = fitz.Rect(span["bbox"])
+                if s_bbox.intersects(rect):
+                    return span
+    return None
+
+def audit_and_fix_pdf(file_path: str, apply_fix: bool = False, style_mode: bool = False) -> TextAuditResult:
+    """Verarbeitet PDF-Dokumente: Extraktion, Audit und In-situ-Korrektur via PyMuPDF."""
+    result = TextAuditResult(file_path)
+    if fitz is None:
+        result.findings.append({"error": "PyMuPDF ist nicht installiert. Bitte mit 'pip install pymupdf' installieren."})
+        result.status = "error"
+        return result
+
+    try:
+        doc = fitz.open(file_path)
+    except Exception as e:
+        result.findings.append({"error": f"PDF-Datei konnte nicht geöffnet werden: {e}"})
+        result.status = "error"
+        return result
+
+    active_rules = get_active_rules(style_mode)
+    modified = False
+
+    for page_idx, page in enumerate(doc):
+        page_raw_text = page.get_text("text")
+        page_dict = page.get_text("dict") if apply_fix else None
+        processed_terms_on_page = set()
+
+        for rule in active_rules:
+            pattern = re.compile(rule["pattern"])
+            for match in pattern.finditer(page_raw_text):
+                orig = match.group(0)
+                corrected = orig
+
+                if "replacement_map" in rule:
+                    corrected = rule["replacement_map"].get(orig.lower(), orig)
+                elif "replacement_str" in rule:
+                    corrected = pattern.sub(rule["replacement_str"], orig)
+
+                if orig == corrected:
+                    continue
+
+                result.findings.append({
+                    "original": orig,
+                    "corrected": corrected,
+                    "rule": rule["rule"],
+                    "reference": rule["reference"],
+                    "page": page_idx + 1
+                })
+
+                if apply_fix and orig not in processed_terms_on_page:
+                    processed_terms_on_page.add(orig)
+                    rects = page.search_for(orig)
+                    if rects:
+                        for rect in rects:
+                            span = find_span_for_rect(page_dict, rect) if page_dict else None
+                            size = span.get("size", 11.0) if span else 11.0
+                            color = span.get("color", 0) if span else 0
+                            origin_y = span.get("origin", (0, rect.y1 - (rect.height * 0.18)))[1] if span else rect.y1 - (rect.height * 0.18)
+                            fontfile, fontname = resolve_font_for_span(span)
+
+                            page.add_redact_annot(rect, fill=(1, 1, 1))
+                            page.apply_redactions()
+
+                            try:
+                                if fontfile:
+                                    page.insert_text(fitz.Point(rect.x0, origin_y), corrected, fontsize=size, fontfile=fontfile, color=color)
+                                else:
+                                    page.insert_text(fitz.Point(rect.x0, origin_y), corrected, fontsize=size, fontname=fontname or "times-roman", color=color)
+                                modified = True
+                                result.modifications_count += 1
+                            except Exception as insert_err:
+                                result.findings.append({"error": f"Fehler beim Einfügen auf Seite {page_idx + 1}: {insert_err}"})
+
+    if apply_fix and modified:
+        bak = create_backup(file_path)
+        tmp_target = f"{file_path}.tmp_fix_{os.getpid()}.pdf"
+        try:
+            doc.save(tmp_target, garbage=3, deflate=True)
+            doc.close()
+            os.replace(tmp_target, file_path)
+            if bak and os.path.exists(bak):
+                try:
+                    os.remove(bak)
+                except Exception:
+                    pass
+            try:
+                doc_after = fitz.open(file_path)
+                full_text_after = "\n\n".join(p.get_text("text").strip() for p in doc_after if p.get_text("text").strip())
+                doc_after.close()
+                result.exported_txt_path = export_to_downloads_txt(file_path, full_text_after)
+            except Exception:
+                pass
+            result.status = "fixed"
+        except Exception as save_err:
+            result.findings.append({"error": f"Fehler beim Speichern der PDF: {save_err}"})
+            result.status = "error"
+    elif len(result.findings) > 0:
+        doc.close()
+        result.status = "findings_detected"
+    else:
+        doc.close()
+        result.status = "clean"
+
+    return result
+
 def process_file(file_path: str, apply_fix: bool = False, style_mode: bool = False) -> TextAuditResult:
     """Wählt deterministisch den passenden Prozessor für den Dateityp."""
     if os.path.isdir(file_path) or file_path.lower().endswith(".rtfd"):
@@ -636,6 +822,8 @@ def process_file(file_path: str, apply_fix: bool = False, style_mode: bool = Fal
         return audit_and_fix_plain(file_path, apply_fix=apply_fix, style_mode=style_mode)
     elif ext == ".rtf":
         return audit_and_fix_rtf(file_path, apply_fix=apply_fix, style_mode=style_mode)
+    elif ext == ".pdf":
+        return audit_and_fix_pdf(file_path, apply_fix=apply_fix, style_mode=style_mode)
     else:
         res = TextAuditResult(file_path)
         res.findings.append({"error": f"Nicht unterstützter Dateityp: {ext}"})
@@ -680,7 +868,7 @@ def main():
     parser.add_argument("-a", dest="audit_mode", metavar="MODUS", default=None, help="Prüflauf ohne Schreibzugriff (detail, summary)")
     parser.add_argument("-o", dest="output", metavar="AUSGABE", default=None, help="Optionaler Ausgabepfad (.txt)")
     parser.add_argument("-j", dest="json_format", metavar="FORMAT", default=None, help="Ausgabe im JSON-Format (pretty, compact)")
-    parser.add_argument("file", metavar="DATEI", help="Text-, Word- oder RTF/RTFD-Datei (.txt/.md/.docx/.typ/.rtf/.rtfd)")
+    parser.add_argument("file", metavar="DATEI", help="Text-, Word-, PDF- oder RTF/RTFD-Datei (.txt/.md/.docx/.typ/.rtf/.rtfd/.pdf)")
 
     normalized_args = normalize_cli_args(sys.argv[1:])
     args = parser.parse_args(normalized_args)
