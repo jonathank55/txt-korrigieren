@@ -248,10 +248,22 @@ def create_backup(file_path: str) -> Optional[str]:
         sys.stderr.write(f"[BACKUP_ERROR] Lokales Backup fehlgeschlagen: {e}\n")
         return None
 
-    # Zentrales Backup via file_backup_engine.py
+    # 1. Zentrales Backup via file_backup_engine.py (falls vorhanden)
     if os.path.exists(BACKUP_SCRIPT):
         try:
             subprocess.run([sys.executable, BACKUP_SCRIPT, file_path], capture_output=True, timeout=60)
+        except Exception:
+            pass
+    else:
+        # 2. Standalone-Archivierung (völlig unabhängig von externen Systemen)
+        try:
+            from datetime import datetime
+            today = datetime.now().strftime("%Y-%m-%d")
+            archive_dir = os.environ.get("XDG_DATA_HOME", os.path.expanduser(f"~/.local/share/txt-korrigieren/backups/{today}"))
+            os.makedirs(archive_dir, exist_ok=True)
+            timestamp = datetime.now().strftime("%H%M%S")
+            filename = os.path.basename(file_path)
+            shutil.copy2(file_path, os.path.join(archive_dir, f"{filename}_{timestamp}.bak"))
         except Exception:
             pass
 

@@ -16,7 +16,12 @@ from datetime import datetime
 from typing import Dict, Any, Optional, List, Set
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-DATA_DIR = os.path.expanduser("~/.gemini/config/data")
+# Standalone Datenverzeichnis für SQLite-Cache (XDG-Standard, autark)
+if os.path.exists(os.path.expanduser("~/.gemini/config/data")):
+    DATA_DIR = os.path.expanduser("~/.gemini/config/data")
+else:
+    DATA_DIR = os.environ.get("XDG_DATA_HOME", os.path.expanduser("~/.local/share/txt-korrigieren"))
+os.makedirs(DATA_DIR, exist_ok=True)
 DB_PATH = os.path.join(DATA_DIR, "duden_cache.sqlite")
 
 OFFICIAL_RULES_INDEX = {
