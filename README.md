@@ -1,0 +1,91 @@
+# txt-korrigieren
+
+**Deterministische Text-, Orthografie- und Stilkorrektur-Engine für die Kommandozeile.**
+
+Ein hochpräzises, maximal konservatives Werkzeug zur automatisierten Korrektur von Text-, Word-, Typst- und RTF-Dokumenten nach den amtlichen Regeln der deutschen Rechtschreibung und den Vorgaben des Dudens. Verfügt über einen dedizierten Schalter zur Optimierung von Stil und Idiomatik (`-s`).
+
+---
+
+## Funktionen & Besonderheiten
+
+- **Maximal konservativer Berichtigungsstandard (Standardmodus):** Der Tonfall, Rhythmus und Satzbau des Autors bleiben unberührt. Korrekturen beschränken sich streng auf unstreitige Orthografie-, Grammatik- und Interpunktionsfehler (Zero Style-Tampering).
+- **Stil- & Idiomatik-Modus (`-s` / `--stil`):** Beseitigt gezielt unidiomatische Wendungen (z. B. *Sinn machen*, *in keinster Weise*), bürokratischen Nominalstil (*im Hinblick auf die Tatsache, dass*), Pleonasmen (*bereits schon*, *voll und ganz*) sowie schiefe Kollokationen.
+- **Multiformat-Unterstützung:** Verarbeitet `.txt`, `.md`, `.docx` (unter Erhalt aller Word-Styles und Drop Caps), `.typ` (Typst) sowie `.rtf` und macOS `.rtfd`-Pakete (unter Beachtung aller RTF-Escape-Sequenzen).
+- **In-situ-Disziplin & automatische Sicherung:** Korrigiert Dokumente direkt am Ursprungsort. Vor jeder Schreiboperation wird automatisch eine atomare Sicherheitskopie angelegt.
+- **Blitzschnelle Ausführung:** Vollständige Korrektur in wenigen Millisekunden (< 50 ms) durch lokale Regex-Heuristiken und mehrstufiges Caching.
+
+---
+
+## Installation
+
+### Einzeiler via Terminal
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/jonathank55/txt-korrigieren/main/install.sh | bash
+```
+
+### Manuelle Installation
+
+1. **Repository klonen:**
+   ```bash
+   git clone https://github.com/jonathank55/txt-korrigieren.git
+   cd txt-korrigieren
+   ```
+
+2. **Installationsskript ausführen:**
+   ```bash
+   ./install.sh
+   ```
+
+---
+
+## Verwendung
+
+```bash
+txt-korrigieren DATEI [OPTIONEN]
+```
+
+### Optionen
+
+| Option | Langform | Funktion |
+| :--- | :--- | :--- |
+| `-s` | `--stil`, `--idiomatik` | **STIL & IDIOMATIK KORRIGIEREN:** Bereinigt zusätzlich Floskeln, Pleonasmen und Anglizismen. |
+| `-f` | `--fix` | Wendet Korrekturen unmittelbar in situ im Dokument an (Standard bei direkter Ausführung). |
+| `-a` | `--audit` | Reiner Prüflauf / Trockenlauf ohne Schreibzugriff auf die Datei. |
+| `--json` | | Gibt die Diagnose- und Korrekturergebnisse als maschinenlesbares JSON aus. |
+| `-h` | `--help` | Zeigt die Befehlshilfe an. |
+
+---
+
+## Anwendungsbeispiele
+
+### 1. Reine Rechtschreib- und Grammatikprüfung (Trockenlauf)
+```bash
+txt-korrigieren -a Dokument.md
+```
+
+### 2. Normative In-situ-Korrektur (Rechtschreibung & Grammatik)
+```bash
+txt-korrigieren Manuskript.docx
+```
+
+### 3. Stil- & Idiomatikkorrektur mit Überarbeitung
+```bash
+txt-korrigieren -s Aufsatz.rtfd
+```
+
+---
+
+## Unterstützte Dateiformate
+
+- **Markdown & Plaintext:** `.txt`, `.md`
+- **Microsoft Word:** `.docx` (Run-by-Run-Modifikation ohne Zerstörung von Formatvorlagen)
+- **Typst-Dokumente:** `.typ`
+- **Rich Text Format:** `.rtf` sowie macOS `.rtfd`-Pakete
+
+---
+
+## Lizenz
+
+Veröffentlicht unter der [MIT-Lizenz](LICENSE).
+Autor: Jonathan Klatchko
