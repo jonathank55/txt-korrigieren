@@ -37,6 +37,14 @@ if [ -f "$SCRIPT_DIR/duden_orthography_engine.py" ]; then
     cp "$SCRIPT_DIR/duden_orthography_engine.py" "$INSTALL_DIR/duden_orthography_engine.py"
 fi
 
+# 4. macOS native SpellBridge kompilieren & installieren
+if [[ "$(uname -s)" == "Darwin" ]]; then
+    echo "Kompiliere native macOS SpellBridge..."
+    if command -v clang >/dev/null 2>&1 && [ -f "$SCRIPT_DIR/spell_bridge.m" ]; then
+        clang -dynamiclib -O3 -framework Cocoa "$SCRIPT_DIR/spell_bridge.m" -o "$INSTALL_DIR/libspell.dylib" 2>/dev/null || true
+    fi
+fi
+
 echo "=============================================================================="
 echo "ERFOLG: txt-korrigieren wurde erfolgreich installiert!"
 echo "Befehl: txt-korrigieren [DATEI] [OPTIONEN]"
