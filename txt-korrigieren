@@ -181,13 +181,6 @@ DETERMINISTIC_RULES = [
         "reference": "Amtliches Regelwerk § 75 / § 77: Trennung von Infinitivgruppen und abhängigen Nebensätzen durch Komma."
     },
     {
-        "id": "pronominalreferenz_dessen_deren",
-        "pattern": r'\b(Die[ \t]+[A-Za-zÄÖÜäöüß]+(?:heiten|keiten|ungen|schaften|en|er|e)[ \t]+des[ \t]+[A-Za-zÄÖÜäöüß]+s[ \t]+und[ \t]+)dessen([ \t]+[A-Za-zÄÖÜäöüß]+)\b',
-        "replacement_str": r'\1deren\2',
-        "rule": "Duden-Grammatik § 484 ff.",
-        "reference": "Duden-Grammatik § 484 ff.: Pronominalreferenz auf ein Plural-Subjekt verlangt Genitiv Plural 'deren' (nicht maskulin/neutral 'dessen')."
-    },
-    {
         "id": "ruestung_akronym_knds",
         "pattern": r'\bKDNS\b',
         "replacement_str": "KNDS",
